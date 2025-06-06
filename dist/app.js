@@ -20,7 +20,7 @@ const db_1 = __importDefault(require("./db"));
 const lib_dynamodb_1 = require("@aws-sdk/lib-dynamodb");
 const uuid_1 = require("uuid");
 const date_fns_1 = require("date-fns");
-const getData_1 = require("../server/getData");
+const getData_1 = require("./getData");
 const cors = require("cors");
 const app = (0, express_1.default)();
 app.use(cors({
