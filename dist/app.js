@@ -21,6 +21,7 @@ const lib_dynamodb_1 = require("@aws-sdk/lib-dynamodb");
 const uuid_1 = require("uuid");
 const date_fns_1 = require("date-fns");
 const getData_1 = require("./getData");
+const insertSample_1 = require("./insertSample");
 const cors = require("cors");
 const app = (0, express_1.default)();
 app.use(cors({
@@ -238,5 +239,15 @@ app.post('/api/login', (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
     catch (err) {
         res.status(500).json({ error: "Failed Login" });
+    }
+}));
+app.post('/api/createUser', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { userName, password } = req.body;
+        const user = yield (0, insertSample_1.createUser)(userName, password);
+        res.status(201).json({ message: "User added." });
+    }
+    catch (err) {
+        res.status(500).json({ error: "Failed to add expense." });
     }
 }));

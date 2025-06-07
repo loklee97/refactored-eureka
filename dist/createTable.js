@@ -11,7 +11,6 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 const client_dynamodb_1 = require("@aws-sdk/client-dynamodb");
 const client_dynamodb_2 = require("@aws-sdk/client-dynamodb");
-// For raw client
 const client = new client_dynamodb_2.DynamoDBClient({
     region: "local",
     endpoint: "http://localhost:8000",
@@ -20,8 +19,9 @@ const client = new client_dynamodb_2.DynamoDBClient({
         secretAccessKey: "fake"
     }
 });
-const command = new client_dynamodb_1.CreateTableCommand({
-    TableName: "money",
+const tableName = "money";
+const createTableCommand = new client_dynamodb_1.CreateTableCommand({
+    TableName: tableName,
     KeySchema: [
         { AttributeName: "id", KeyType: "HASH" },
         { AttributeName: "createdDate", KeyType: "RANGE" }
@@ -39,26 +39,21 @@ const command = new client_dynamodb_1.CreateTableCommand({
             KeySchema: [
                 { AttributeName: "type", KeyType: "HASH" }
             ],
-            Projection: {
-                ProjectionType: "ALL"
-            }
-        }, {
+            Projection: { ProjectionType: "ALL" }
+        },
+        {
             IndexName: "CreatedDateIndex",
             KeySchema: [
                 { AttributeName: "createdDate", KeyType: "HASH" }
             ],
-            Projection: {
-                ProjectionType: "ALL"
-            },
+            Projection: { ProjectionType: "ALL" }
         },
         {
             IndexName: "UserNameIndex",
             KeySchema: [
                 { AttributeName: "userName", KeyType: "HASH" }
             ],
-            Projection: {
-                ProjectionType: "ALL"
-            },
+            Projection: { ProjectionType: "ALL" }
         },
         {
             IndexName: "TypeUserIndex",
@@ -66,23 +61,22 @@ const command = new client_dynamodb_1.CreateTableCommand({
                 { AttributeName: "userName", KeyType: "HASH" },
                 { AttributeName: "type", KeyType: "RANGE" }
             ],
-            Projection: {
-                ProjectionType: "ALL"
-            },
+            Projection: { ProjectionType: "ALL" }
         }
-        // ProvisionedThroughput 这儿不需要，PAY_PER_REQUEST 模式下
-    ] /* ,
-    ProvisionedThroughput: {
-      ReadCapacityUnits: 5,
-      WriteCapacityUnits: 5
-    } */
+    ]
 });
 (() => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        yield client.send(command);
-        console.log("✅ Table created.");
+        yield client.send(new client_dynamodb_1.DescribeTableCommand({ TableName: tableName }));
+        console.log("ℹ️ Table already exists. Skipping creation.");
     }
-    catch (err) {
-        console.error("❌ Error creating table:", err);
+    catch (error) {
+        if (error.name === "ResourceNotFoundException") {
+            yield client.send(createTableCommand);
+            console.log("✅ Table created.");
+        }
+        else {
+            console.error("❌ Unexpected error checking table:", error);
+        }
     }
 }))();
