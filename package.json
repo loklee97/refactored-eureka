@@ -3,10 +3,12 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {
-    "start": "node dist/app.js",
-  "build": "tsc"
-  },
+"scripts": {
+  "start": "node dist/app.js",
+  "build": "tsc",  
+  "dev": "ts-node server/app.ts",
+  "postbuild": "node dist/createTable.js"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
