@@ -24,8 +24,19 @@ const getData_1 = require("./getData");
 const insertSample_1 = require("./insertSample");
 const cors = require("cors");
 const app = (0, express_1.default)();
+const allowedOrigins = [
+    'http://localhost:5173', // dev frontend
+    'https://money-k3wb.vercel.app' // deployed frontend
+];
 app.use(cors({
-    origin: "http://localhost:5173"
+    origin: (origin, callback) => {
+        if (!origin)
+            return callback(null, true);
+        if (allowedOrigins.includes(origin))
+            callback(null, true);
+        else
+            callback(new Error('Not allowed by CORS'));
+    }
 }));
 app.use(express_1.default.json());
 const port = 3001;
