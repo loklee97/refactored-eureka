@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
 "scripts": {
-  "start": "node dist/app.js",
+  "start": "node dist/createTable.js && node dist/app.js",
   "build": "tsc",  
   "dev": "ts-node server/app.ts",
   "postbuild": "node dist/createTable.js"
