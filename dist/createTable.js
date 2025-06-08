@@ -8,17 +8,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const client_dynamodb_1 = require("@aws-sdk/client-dynamodb");
-const client_dynamodb_2 = require("@aws-sdk/client-dynamodb");
-const client = new client_dynamodb_2.DynamoDBClient({
-    region: "local",
-    endpoint: "http://localhost:8000",
-    credentials: {
-        accessKeyId: "fake",
-        secretAccessKey: "fake"
-    }
-});
+const db_1 = __importDefault(require("./db"));
 const tableName = "money";
 const createTableCommand = new client_dynamodb_1.CreateTableCommand({
     TableName: tableName,
@@ -67,12 +62,12 @@ const createTableCommand = new client_dynamodb_1.CreateTableCommand({
 });
 (() => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        yield client.send(new client_dynamodb_1.DescribeTableCommand({ TableName: tableName }));
+        yield db_1.default.send(new client_dynamodb_1.DescribeTableCommand({ TableName: tableName }));
         console.log("ℹ️ Table already exists. Skipping creation.");
     }
     catch (error) {
         if (error.name === "ResourceNotFoundException") {
-            yield client.send(createTableCommand);
+            yield db_1.default.send(createTableCommand);
             console.log("✅ Table created.");
         }
         else {

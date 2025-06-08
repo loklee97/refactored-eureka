@@ -8,21 +8,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 const client_dynamodb_1 = require("@aws-sdk/client-dynamodb");
+const db_1 = __importDefault(require("./db"));
 function deleteTable(expenses) {
     return __awaiter(this, void 0, void 0, function* () {
-        const client = new client_dynamodb_1.DynamoDBClient({
-            region: "local",
-            endpoint: "http://localhost:8000",
-            credentials: {
-                accessKeyId: "fake",
-                secretAccessKey: "fake",
-            },
-        });
         try {
             const command = new client_dynamodb_1.DeleteTableCommand({ TableName: expenses });
-            const response = yield client.send(command);
+            const response = yield db_1.default.send(command);
             console.log(`Table "${expenses}" deleted successfully.`);
             console.log(response);
         }
