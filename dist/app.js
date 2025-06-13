@@ -172,6 +172,16 @@ app.post('/api/deleteRecord', (req, res) => __awaiter(void 0, void 0, void 0, fu
 app.post('/api/updateRecord', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { name, categoryCode, description, amount, calculation, parentId, createdDate, id, userName } = req.body;
+        //get old record
+        const getParams = {
+            TableName: "money",
+            Key: {
+                id: id,
+                createdDate: createdDate,
+            },
+        };
+        const old = yield db_1.default.send(new lib_dynamodb_1.GetCommand(getParams));
+        const oldData = old.Item;
         const now = new Date();
         const updatedDate = (0, date_fns_1.format)(now, 'dd-MM-yyyy HH:mm');
         const params = {
@@ -215,13 +225,12 @@ app.post('/api/updateRecord', (req, res) => __awaiter(void 0, void 0, void 0, fu
         console.log('update param : ', params);
         const result = yield db_1.default.send(new lib_dynamodb_1.UpdateCommand(params));
         console.log('update result : ', result);
-        const oldItem = result.Attributes;
-        console.log('update attribute : ', oldItem);
-        if (oldItem) {
-            if (oldItem.amount !== amount) {
+        console.log('old data : ', oldData);
+        if (oldData) {
+            if (oldData.amount !== amount) {
                 const oldnew = {
-                    oldCalculation: oldItem.calculation,
-                    oldAmount: oldItem.amount,
+                    oldCalculation: oldData.calculation,
+                    oldAmount: oldData.amount,
                     newCalculation: calculation,
                     newAmount: amount,
                     user: userName,
