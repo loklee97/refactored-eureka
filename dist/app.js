@@ -301,9 +301,9 @@ app.post('/api/calculateTotal', (req, res) => __awaiter(void 0, void 0, void 0, 
         };
         console.log("param user:", params);
         const result = yield db_1.default.send(new lib_dynamodb_1.UpdateCommand(params));
-        return res.status(200).json({ message: 'Login successful', total: sum });
+        return res.status(200).json(sum);
     }
     catch (err) {
-        res.status(500).json({ error: "Failed Login" });
+        res.status(500).json({ error: "Failed Calculate" });
     }
 }));
