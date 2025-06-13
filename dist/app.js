@@ -29,14 +29,9 @@ const allowedOrigins = [
     'https://money-k3wb.vercel.app' // deployed frontend
 ];
 app.use(cors({
-    origin: (origin, callback) => {
-        if (!origin)
-            return callback(null, true);
-        if (allowedOrigins.includes(origin))
-            callback(null, true);
-        else
-            callback(new Error('Not allowed by CORS'));
-    }
+    origin: allowedOrigins,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    credentials: true
 }));
 app.use(express_1.default.json());
 const port = 3001;
