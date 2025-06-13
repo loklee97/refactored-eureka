@@ -86,9 +86,12 @@ function getDataByTypeUser(type, user) {
 function recalculateMoney(recalculate) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
+            console.log('rec money : ', recalculate);
             const now = new Date();
             const updatedDate = (0, date_fns_1.format)(now, 'dd-MM-yyyy HH:mm');
             const user = yield getDataByType('User').then(x => x.find(user => user.userName === recalculate.user));
+            console.log('user', user);
+            console.log('recalculate', recalculate);
             const newMoney = user.money - (recalculate.oldAmount * recalculate.oldCalculation) + (recalculate.newAmount * recalculate.newCalculation);
             console.log('newmoney', newMoney);
             const params = {

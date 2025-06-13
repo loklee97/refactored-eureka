@@ -145,11 +145,14 @@ app.post('/api/deleteRecord', (req, res) => __awaiter(void 0, void 0, void 0, fu
                 money: deleteRequests
             }
         };
-        const newAmount = data.reduce((sum, child) => sum + child.amount);
+        const newAmount = data.reduce((sum, child) => {
+            const amt = Number(child.amount);
+            return sum + (isNaN(amt) ? 0 : amt); // ignore invalid numbers
+        }, 0);
         const userName = data[0].userName;
         console.log(data);
         console.log(userName);
-        console.log(newAmount);
+        console.log('newamount : ', newAmount);
         const oldnew = {
             oldCalculation: 0,
             oldAmount: 0,
@@ -168,7 +171,7 @@ app.post('/api/deleteRecord', (req, res) => __awaiter(void 0, void 0, void 0, fu
 }));
 app.post('/api/updateRecord', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { name, categoryCode, description, amount, calculation, parentId, createdDate, id, user } = req.body;
+        const { name, categoryCode, description, amount, calculation, parentId, createdDate, id, userName } = req.body;
         const now = new Date();
         const updatedDate = (0, date_fns_1.format)(now, 'dd-MM-yyyy HH:mm');
         const params = {
@@ -185,7 +188,7 @@ app.post('/api/updateRecord', (req, res) => __awaiter(void 0, void 0, void 0, fu
         #cal = :calculation,
         #pid = :parentId,
         #udt = :updatedDate,
-        #user = :user,
+        #userName = :userName
   `,
             ExpressionAttributeNames: {
                 "#n": "name",
@@ -195,7 +198,7 @@ app.post('/api/updateRecord', (req, res) => __awaiter(void 0, void 0, void 0, fu
                 "#cal": "calculation",
                 "#pid": "parentId",
                 "#udt": "updatedDate",
-                "#user": ":user",
+                "#userName": "userName",
             },
             ExpressionAttributeValues: {
                 ":name": name,
@@ -205,26 +208,29 @@ app.post('/api/updateRecord', (req, res) => __awaiter(void 0, void 0, void 0, fu
                 ":calculation": calculation,
                 ":parentId": parentId,
                 ":updatedDate": new Date().toISOString(),
-                ":user ": user
+                ":userName": userName
             },
             ReturnValues: "UPDATED_NEW"
         };
+        console.log('update param : ', params);
         const result = yield db_1.default.send(new lib_dynamodb_1.UpdateCommand(params));
+        console.log('update result : ', result);
         const oldItem = result.Attributes;
+        console.log('update attribute : ', oldItem);
         if (oldItem) {
             if (oldItem.amount !== amount) {
-                user.money = user.money - (oldItem.amount * oldItem.calculation) + (amount * calculation);
                 const oldnew = {
                     oldCalculation: oldItem.calculation,
                     oldAmount: oldItem.amount,
                     newCalculation: calculation,
                     newAmount: amount,
-                    user: user,
+                    user: userName,
                 };
+                console.log('update money amount : ', oldnew);
                 yield (0, getData_1.recalculateMoney)(oldnew);
             }
         }
-        res.status(200).json({ message: "Record updated successfully", result });
+        res.status(200).json({ message: "Record updated successfully" });
     }
     catch (error) {
         console.error("Update failed:", error);
@@ -283,27 +289,47 @@ app.post('/api/calculateTotal', (req, res) => __awaiter(void 0, void 0, void 0, 
             TableName: "money",
             Key: {
                 id: user.id,
-                createdDate: user.updatedDate,
+                createdDate: user.createdDate,
             },
             UpdateExpression: `
-    SET #amt = :amt,
+    SET #money = :money,
         #udt = :updatedDate
   `,
             ExpressionAttributeNames: {
-                "#amt": "amount",
+                "#money": "money",
                 "#udt": "updatedDate",
             },
             ExpressionAttributeValues: {
-                ":amt": sum,
+                ":money": sum,
                 ":updatedDate": updatedDate,
             },
             ReturnValues: "UPDATED_NEW"
         };
         console.log("param user:", params);
         const result = yield db_1.default.send(new lib_dynamodb_1.UpdateCommand(params));
+        console.log('calculate result : ', result);
         return res.status(200).json(sum);
     }
     catch (err) {
         res.status(500).json({ error: "Failed Calculate" });
+    }
+}));
+app.get("/api/getMoneyByUser", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const query = req.query;
+        console.log('typeof :', typeof query);
+        console.log('request :', query);
+        if (!query || typeof query.userName !== "string") {
+            return res.status(400).json({ error: "type is required and must be a string" });
+        }
+        const user = yield (0, getData_1.getDataByType)('User').then(x => x.find(user => user.userName === query.userName));
+        if (!user) {
+            return res.status(401).json({ message: 'User not found' });
+        }
+        console.log('Money by user: ', user.money);
+        res.json(user.money);
+    }
+    catch (error) {
+        res.status(500).json({ error: "Failed to fetch record." });
     }
 }));
