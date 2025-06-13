@@ -93,10 +93,10 @@ app.post('/api/createRecord', (req, res) => __awaiter(void 0, void 0, void 0, fu
             user: userName,
         };
         yield (0, getData_1.recalculateMoney)(oldnew);
-        res.status(201).json({ message: "Expense added." });
+        res.status(201).json({ message: "Record added." });
     }
     catch (err) {
-        res.status(500).json({ error: "Failed to add expense." });
+        res.status(500).json({ error: "Failed to add record." });
     }
 }));
 // 定义 schema
@@ -108,11 +108,12 @@ app.get("/api/getAllRecord", (req, res) => __awaiter(void 0, void 0, void 0, fun
         if (!query || typeof query.type !== "string") {
             return res.status(400).json({ error: "type is required and must be a string" });
         }
-        const expenses = yield (0, getData_1.getDataByType)(query.type);
-        res.json(expenses);
+        const record = yield (0, getData_1.getDataByType)(query.type);
+        console.log('All record by type : ', record);
+        res.json(record);
     }
     catch (error) {
-        res.status(500).json({ error: "Failed to fetch expenses." });
+        res.status(500).json({ error: "Failed to fetch record." });
     }
 }));
 app.get("/api/getAllRecordUser", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -123,11 +124,12 @@ app.get("/api/getAllRecordUser", (req, res) => __awaiter(void 0, void 0, void 0,
         if (!query || typeof query.type !== "string" || typeof query.userName !== "string") {
             return res.status(400).json({ error: "type is required and must be a string" });
         }
-        const expenses = yield (0, getData_1.getDataByTypeUser)(query.type, query.userName);
-        res.json(expenses);
+        const record = yield (0, getData_1.getDataByTypeUser)(query.type, query.userName);
+        console.log('All record by type and user: ', record);
+        res.json(record);
     }
     catch (error) {
-        res.status(500).json({ error: "Failed to fetch expenses." });
+        res.status(500).json({ error: "Failed to fetch record." });
     }
 }));
 app.post('/api/deleteRecord', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -259,6 +261,54 @@ app.post('/api/createUser', (req, res) => __awaiter(void 0, void 0, void 0, func
         res.status(201).json({ message: "User added." });
     }
     catch (err) {
-        res.status(500).json({ error: "Failed to add expense." });
+        res.status(500).json({ error: "Failed to add user." });
+    }
+}));
+app.post('/api/calculateTotal', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { userName } = req.body;
+        console.log('userName : ', userName);
+        const record = yield (0, getData_1.getDataByType)('Record').then(x => x.filter(user => user.userName === userName));
+        console.log('record : ', record);
+        if (!record || record.length === 0) {
+            return res.status(404).json({ message: 'Record not found' });
+        }
+        const sum = record.reduce((acc, item) => {
+            return acc + (Number(item.amount) * Number(item.calculation));
+        }, 0);
+        console.log('sum : ', sum);
+        const user = yield (0, getData_1.getDataByType)('User').then(x => x.find(user => user.userName === userName));
+        if (!user) {
+            return res.status(401).json({ message: 'User not found' });
+        }
+        console.log("Updating user:", user);
+        const now = new Date();
+        const updatedDate = (0, date_fns_1.format)(now, 'dd-MM-yyyy HH:mm');
+        const params = {
+            TableName: "money",
+            Key: {
+                id: user.id,
+                createdDate: user.updatedDate,
+            },
+            UpdateExpression: `
+    SET #amt = :amt,
+        #udt = :updatedDate
+  `,
+            ExpressionAttributeNames: {
+                "#amt": "amount",
+                "#udt": "updatedDate",
+            },
+            ExpressionAttributeValues: {
+                ":amt": sum,
+                ":updatedDate": updatedDate,
+            },
+            ReturnValues: "UPDATED_NEW"
+        };
+        console.log("param user:", params);
+        const result = yield db_1.default.send(new lib_dynamodb_1.UpdateCommand(params));
+        return res.status(200).json({ message: 'Login successful', total: sum });
+    }
+    catch (err) {
+        res.status(500).json({ error: "Failed Login" });
     }
 }));
