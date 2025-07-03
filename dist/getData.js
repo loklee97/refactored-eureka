@@ -92,7 +92,7 @@ function recalculateMoney(recalculate) {
             const user = yield getDataByType('User').then(x => x.find(user => user.userName === recalculate.user));
             console.log('user', user);
             console.log('recalculate', recalculate);
-            const newMoney = user.money - (recalculate.oldAmount * recalculate.oldCalculation) + (recalculate.newAmount * recalculate.newCalculation);
+            const newMoney = user.money - recalculate.oldAmount + recalculate.newAmount;
             console.log('newmoney', newMoney);
             const params = {
                 TableName: "money",
