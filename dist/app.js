@@ -30,7 +30,7 @@ const allowedOrigins = [
 ];
 app.use(cors({
     origin: allowedOrigins,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     credentials: true
 }));
 app.use(express_1.default.json());
@@ -81,12 +81,11 @@ app.post('/api/createRecord', (req, res) => __awaiter(void 0, void 0, void 0, fu
         console.log(command);
         yield db_1.default.send(command);
         const oldnew = {
-            oldCalculation: 0,
             oldAmount: 0,
-            newCalculation: calculation,
-            newAmount: amount,
+            newAmount: amount * calculation,
             user: userName,
         };
+        console.log('api create oldnew :', oldnew);
         yield (0, getData_1.recalculateMoney)(oldnew);
         res.status(201).json({ message: "Record added." });
     }
@@ -127,11 +126,11 @@ app.get("/api/getAllRecordUser", (req, res) => __awaiter(void 0, void 0, void 0,
         res.status(500).json({ error: "Failed to fetch record." });
     }
 }));
-app.post('/api/deleteRecord', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.delete('/api/deleteRecord', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const data = req.body;
         console.log(req);
-        console.log(data);
+        console.log('delete record data :', data);
         const deleteRequests = data.map((item) => ({
             DeleteRequest: {
                 Key: {
@@ -154,10 +153,8 @@ app.post('/api/deleteRecord', (req, res) => __awaiter(void 0, void 0, void 0, fu
         console.log(userName);
         console.log('newamount : ', newAmount);
         const oldnew = {
-            oldCalculation: 0,
-            oldAmount: 0,
-            newCalculation: -1,
-            newAmount: newAmount,
+            oldAmount: newAmount,
+            newAmount: 0,
             user: userName,
         };
         yield (0, getData_1.recalculateMoney)(oldnew);
@@ -169,7 +166,7 @@ app.post('/api/deleteRecord', (req, res) => __awaiter(void 0, void 0, void 0, fu
         res.status(500).json({ error: "Failed deleted ." });
     }
 }));
-app.post('/api/updateRecord', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.patch('/api/updateRecord', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { name, categoryCode, description, amount, calculation, parentId, createdDate, id, userName } = req.body;
         //get old record
@@ -229,10 +226,8 @@ app.post('/api/updateRecord', (req, res) => __awaiter(void 0, void 0, void 0, fu
         if (oldData) {
             if (oldData.amount !== amount) {
                 const oldnew = {
-                    oldCalculation: oldData.calculation,
-                    oldAmount: oldData.amount,
-                    newCalculation: calculation,
-                    newAmount: amount,
+                    oldAmount: oldData.amount * oldData.calculation,
+                    newAmount: amount * calculation,
                     user: userName,
                 };
                 console.log('update money amount : ', oldnew);
