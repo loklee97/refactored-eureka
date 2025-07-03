@@ -38,13 +38,13 @@ function getDataByType(type) {
         try {
             const params = {
                 TableName: "money",
-                IndexName: "TypeIndex", // your GSI name
+                IndexName: "TypeIndex",
                 KeyConditionExpression: "#t = :type",
                 ExpressionAttributeNames: {
                     "#t": "type"
                 },
                 ExpressionAttributeValues: {
-                    ":type": type // 直接用字符串
+                    ":type": type
                 }
             };
             console.log(params);
@@ -62,7 +62,7 @@ function getDataByTypeUser(type, user) {
         try {
             const params = {
                 TableName: "money",
-                IndexName: "TypeUserIndex", // your GSI name
+                IndexName: "TypeUserIndex",
                 KeyConditionExpression: "#type = :typeVal AND #user = :userVal",
                 ExpressionAttributeNames: {
                     "#type": "type",
