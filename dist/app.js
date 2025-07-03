@@ -67,6 +67,9 @@ app.use(cors({
 }));
 app.use(express_1.default.json());
 const port = 3001;
+app.listen(port, () => {
+    console.log(`🚀 Server is running on http://localhost:${port}`);
+});
 app.post("/expenses", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { userId, date, category, description, amount } = req.body;
