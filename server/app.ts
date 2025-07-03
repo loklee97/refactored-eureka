@@ -8,7 +8,6 @@ import { BatchWriteCommand, DeleteCommand, GetCommand, GetCommandOutput, PutComm
 import { v4 as uuidv4 } from "uuid";
 import { format } from 'date-fns';
 import { getAllMoney, getDataByType, getDataByTypeUser, recalculate, recalculateMoney } from "./getData";
-import { createUser } from "./insertSample";
 
 const cors = require("cors");
 const app = express();
@@ -19,16 +18,58 @@ const allowedOrigins = [
   'https://money-k3wb.vercel.app'  // deployed frontend
 ];
 
+type user = {
+  id: string,
+  createdDate: string,
+  type: string,
+  userName: string,
+  password: string,
+  money: number
+};
+
+ async function createUser(userName: string, password: string): Promise<any> {
+  try {
+    const SECRET_KEY = 'hw9YcQrAJRyzJ+OmPZnmExhRzkEVvrXX3biIhWS6N6qXOltLbzNQJxdJg4q7Ka0+'
+    const express = require('express');
+    const bcrypt = require('bcrypt');
+    const jwt = require('jsonwebtoken');
+    const bodyParser = require('body-parser');
+    const now = new Date();
+    const updatedDate = format(now, 'dd-MM-yyyy HH:mm');
+    console.log('date' + updatedDate)
+    const id = `U-${uuidv4()}-${updatedDate}`;
+
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser: user = {
+      id: id,
+      createdDate: updatedDate,
+      type: 'User',
+      userName: userName,
+      password: hashedPassword,
+      money: 0
+    }
+
+    const result = await docClient.send(new PutCommand({
+      TableName: "money",
+      Item: newUser
+    }));
+
+    console.log("✅ Sample data inserted:", newUser);
+    return true
+  } catch (err) {
+    console.error("❌ Failed to insert sample data:", err);
+  }
+}
+
 app.use(cors({
   origin: allowedOrigins,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS','PATCH'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   credentials: true
 }));
 app.use(express.json());
 const port = 3001;
 
-
-// POST /expenses → Add a new expense
 app.post("/expenses", async (req, res) => {
   try {
     const { userId, date, category, description, amount } = req.body;
@@ -45,7 +86,6 @@ app.post("/expenses", async (req, res) => {
   }
 });
 
-// GET /expenses → List all expenses
 app.get("/getAllMoney", async (_req, res) => {
   try {
     const command = new ScanCommand({ TableName: "money" });
@@ -54,10 +94,6 @@ app.get("/getAllMoney", async (_req, res) => {
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch expenses." });
   }
-});
-
-app.listen(port, () => {
-  console.log(`🚀 Server is running on http://localhost:${port}`);
 });
 
 
@@ -82,14 +118,13 @@ app.post('/api/createRecord', async (req, res) => {
       newAmount: amount * calculation,
       user: userName,
     };
-    console.log('api create oldnew :',oldnew)
+    console.log('api create oldnew :', oldnew)
     await recalculateMoney(oldnew);
     res.status(201).json({ message: "Record added." });
   } catch (err) {
     res.status(500).json({ error: "Failed to add record." });
   }
 });
-// 定义 schema
 
 app.get("/api/getAllRecord", async (req: express.Request<{}, {}, {}, { type: string }>,
   res: express.Response) => {
@@ -128,8 +163,7 @@ app.get("/api/getAllRecordUser", async (req: express.Request<{}, {}, {}, { type:
 app.delete('/api/deleteRecord', async (req, res) => {
   try {
     const data = req.body;
-    console.log(req)
-    console.log('delete record data :',data)
+    console.log('delete record data :', data)
     const deleteRequests = data.map((item: { id: string; createdDate: string }) => ({
       DeleteRequest: {
         Key: {
@@ -138,13 +172,11 @@ app.delete('/api/deleteRecord', async (req, res) => {
         }
       }
     }));
-
     const params = {
       RequestItems: {
         money: deleteRequests
       }
     };
-
     const newAmount = data.reduce((sum: number, child: { amount: any }) => {
       const amt = Number(child.amount);
       return sum + (isNaN(amt) ? 0 : amt); // ignore invalid numbers
@@ -158,9 +190,7 @@ app.delete('/api/deleteRecord', async (req, res) => {
       newAmount: 0,
       user: userName,
     };
-
     await recalculateMoney(oldnew);
-
     await docClient.send(new BatchWriteCommand(params));
     res.status(200).json({ message: "Item deleted successfully" });
   } catch (err) {
@@ -171,10 +201,7 @@ app.delete('/api/deleteRecord', async (req, res) => {
 
 app.patch('/api/updateRecord', async (req, res) => {
   try {
-
-
     const { name, categoryCode, description, amount, calculation, parentId, createdDate, id, userName } = req.body;
-
     //get old record
     const getParams = {
       TableName: "money",
@@ -226,14 +253,11 @@ app.patch('/api/updateRecord', async (req, res) => {
       },
       ReturnValues: "UPDATED_NEW" as "UPDATED_NEW"
     };
-    console.log('update param : ', params)
     const result = await docClient.send(new UpdateCommand(params));
-    console.log('update result : ', result)
-    console.log('old data : ', oldData)
     if (oldData) {
       if (oldData.amount !== amount) {
         const oldnew: recalculate = {
-          oldAmount: oldData.amount*oldData.calculation,
+          oldAmount: oldData.amount * oldData.calculation,
           newAmount: amount * calculation,
           user: userName,
         };
@@ -265,14 +289,11 @@ app.post('/api/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid password' });
     }
 
-
-
     return res.status(200).json({ message: 'Login successful', userName: user.userName, money: user.money });
   } catch (err) {
     res.status(500).json({ error: "Failed Login" });
   }
 });
-
 
 app.post('/api/createUser', async (req, res) => {
   try {

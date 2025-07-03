@@ -21,13 +21,45 @@ const lib_dynamodb_1 = require("@aws-sdk/lib-dynamodb");
 const uuid_1 = require("uuid");
 const date_fns_1 = require("date-fns");
 const getData_1 = require("./getData");
-const insertSample_1 = require("./insertSample");
 const cors = require("cors");
 const app = (0, express_1.default)();
 const allowedOrigins = [
     'http://localhost:5173', // dev frontend
     'https://money-k3wb.vercel.app' // deployed frontend
 ];
+function createUser(userName, password) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const SECRET_KEY = 'hw9YcQrAJRyzJ+OmPZnmExhRzkEVvrXX3biIhWS6N6qXOltLbzNQJxdJg4q7Ka0+';
+            const express = require('express');
+            const bcrypt = require('bcrypt');
+            const jwt = require('jsonwebtoken');
+            const bodyParser = require('body-parser');
+            const now = new Date();
+            const updatedDate = (0, date_fns_1.format)(now, 'dd-MM-yyyy HH:mm');
+            console.log('date' + updatedDate);
+            const id = `U-${(0, uuid_1.v4)()}-${updatedDate}`;
+            const hashedPassword = yield bcrypt.hash(password, 10);
+            const newUser = {
+                id: id,
+                createdDate: updatedDate,
+                type: 'User',
+                userName: userName,
+                password: hashedPassword,
+                money: 0
+            };
+            const result = yield db_1.default.send(new lib_dynamodb_1.PutCommand({
+                TableName: "money",
+                Item: newUser
+            }));
+            console.log("✅ Sample data inserted:", newUser);
+            return true;
+        }
+        catch (err) {
+            console.error("❌ Failed to insert sample data:", err);
+        }
+    });
+}
 app.use(cors({
     origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
@@ -35,7 +67,6 @@ app.use(cors({
 }));
 app.use(express_1.default.json());
 const port = 3001;
-// POST /expenses → Add a new expense
 app.post("/expenses", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { userId, date, category, description, amount } = req.body;
@@ -50,7 +81,6 @@ app.post("/expenses", (req, res) => __awaiter(void 0, void 0, void 0, function* 
         res.status(500).json({ error: "Failed to add expense." });
     }
 }));
-// GET /expenses → List all expenses
 app.get("/getAllMoney", (_req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const command = new lib_dynamodb_1.ScanCommand({ TableName: "money" });
@@ -61,9 +91,6 @@ app.get("/getAllMoney", (_req, res) => __awaiter(void 0, void 0, void 0, functio
         res.status(500).json({ error: "Failed to fetch expenses." });
     }
 }));
-app.listen(port, () => {
-    console.log(`🚀 Server is running on http://localhost:${port}`);
-});
 app.post('/api/createRecord', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { name, categoryCode, description, amount, calculation, parentId, userName } = req.body;
@@ -93,7 +120,6 @@ app.post('/api/createRecord', (req, res) => __awaiter(void 0, void 0, void 0, fu
         res.status(500).json({ error: "Failed to add record." });
     }
 }));
-// 定义 schema
 app.get("/api/getAllRecord", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const query = req.query;
@@ -129,7 +155,6 @@ app.get("/api/getAllRecordUser", (req, res) => __awaiter(void 0, void 0, void 0,
 app.delete('/api/deleteRecord', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const data = req.body;
-        console.log(req);
         console.log('delete record data :', data);
         const deleteRequests = data.map((item) => ({
             DeleteRequest: {
@@ -219,10 +244,7 @@ app.patch('/api/updateRecord', (req, res) => __awaiter(void 0, void 0, void 0, f
             },
             ReturnValues: "UPDATED_NEW"
         };
-        console.log('update param : ', params);
         const result = yield db_1.default.send(new lib_dynamodb_1.UpdateCommand(params));
-        console.log('update result : ', result);
-        console.log('old data : ', oldData);
         if (oldData) {
             if (oldData.amount !== amount) {
                 const oldnew = {
@@ -262,7 +284,7 @@ app.post('/api/login', (req, res) => __awaiter(void 0, void 0, void 0, function*
 app.post('/api/createUser', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const { userName, password } = req.body;
-        const user = yield (0, insertSample_1.createUser)(userName, password);
+        const user = yield createUser(userName, password);
         res.status(201).json({ message: "User added." });
     }
     catch (err) {

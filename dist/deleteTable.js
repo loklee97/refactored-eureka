@@ -27,5 +27,4 @@ function deleteTable(expenses) {
         }
     });
 }
-// 替换成你想删的表名
 deleteTable("money");

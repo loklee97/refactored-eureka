@@ -12,6 +12,4 @@ async function deleteTable(expenses: string) {
     console.error("Error deleting table:", err);
   }
 }
-
-// 替换成你想删的表名
 deleteTable("money");
