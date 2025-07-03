@@ -11,8 +11,6 @@ import { getAllMoney, getDataByType, getDataByTypeUser, recalculate, recalculate
 
 const cors = require("cors");
 const app = express();
-
-
 const allowedOrigins = [
   'http://localhost:5173',  // dev frontend
   'https://money-k3wb.vercel.app'  // deployed frontend
@@ -69,6 +67,10 @@ app.use(cors({
 }));
 app.use(express.json());
 const port = 3001;
+
+app.listen(port, () => {
+  console.log(`🚀 Server is running on http://localhost:${port}`);
+});
 
 app.post("/expenses", async (req, res) => {
   try {
